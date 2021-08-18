@@ -77,21 +77,29 @@ void drawCube() {
 }
 
 void loop(void) {
-  float angle = (millis() / 10 % 360) * 1.0f;
-  //float in_data = analogRead(A0);
-  //Serial.println(in_data);
-  //float angle = (in_data * 360.0f) / 1023;
-  const float scale = 2.5;
+  try {
+    float angle = (millis() / 10 % 360) * 1.0f;
+    //float in_data = analogRead(A0);
+    //Serial.println(in_data);
+    //float angle = (in_data * 360.0f) / 1023;
+    const float scale = 2.5;
 
-  glClear(GL_COLOR_BUFFER_BIT); 
+    glClear(GL_COLOR_BUFFER_BIT); 
   
-  glLoadIdentity();
-  gluLookAt(10, 8, -10, 0, 0, 0, 0, 1, 0);
-  glRotatef(angle, 0.f, 1.f, 0.f);
-  glScalef(scale, scale, scale);
-  drawCube();
-  screen.fillScreen(screen.color565(0, 0, 0));
-  // the darkest that can be rendered apparently is screen.color565(8, 8, 8)
-  screen.drawRGBBitmap(0, 0, c.getBuffer(), 64, 64);
-  screen.show();
+    glLoadIdentity();
+    gluLookAt(10, 8, -10, 0, 0, 0, 0, 1, 0);
+    glRotatef(angle, 0.f, 1.f, 0.f);
+    glScalef(scale, scale, scale);
+    drawCube();
+    screen.fillScreen(screen.color565(0, 0, 0));
+    // the darkest that can be rendered apparently is screen.color565(8, 8, 8)
+    screen.drawRGBBitmap(0, 0, c.getBuffer(), 64, 64);
+    screen.show();
+   }
+   catch (std::exception& ex) {
+      Serial.println(ex.what());
+   }
+   catch (...) {
+      Serial.println("Caught unknown exception.");
+   }
 }
