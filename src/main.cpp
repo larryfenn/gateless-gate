@@ -12,7 +12,7 @@ uint8_t oePin      = 16;
 Adafruit_Protomatter screen(
   64, 6, 1, rgbPins, 5, addrPins, clockPin, latchPin, oePin, true);
 
-GFXcanvas1 c(64, 64);
+GFXcanvas16 c(64, 64);
 void setup(void) {
   Serial.begin(9600);
   ProtomatterStatus status = screen.begin();
@@ -92,6 +92,6 @@ void loop(void) {
   drawCube();
   screen.fillScreen(screen.color565(0, 0, 0));
   // the darkest that can be rendered apparently is screen.color565(8, 8, 8)
-  screen.drawBitmap(0, 0, c.getBuffer(), 64, 64, screen.color565(8, 8, 8));
+  screen.drawRGBBitmap(0, 0, c.getBuffer(), 64, 64);
   screen.show();
 }
