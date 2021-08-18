@@ -54,7 +54,7 @@ void glVertex3fv(float * v);
 void glVertex3f(float x, float y, float z);
 
 /* OpenGL */
-void glUseCanvas(GFXcanvas1 c); /* <-- Arduino only */
+void glUseCanvas(GFXcanvas1* c); /* <-- Arduino only */
 
 void glPointSize(unsigned size);
 void glClear(int mask);

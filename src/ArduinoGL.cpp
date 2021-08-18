@@ -11,7 +11,7 @@
 
 #define DEG2RAD (3.14159265358979323846/180.0)
 
-GFXcanvas1 glCanvas(64, 64);
+GFXcanvas1* glCanvas = NULL;
 GLDrawMode glDrawMode = GL_NONE;
 
 GLVertex glVertices[MAX_VERTICES];
@@ -346,14 +346,15 @@ void glVertex3f(float x, float y, float z) {
 
 /* OpenGL */
 
-void glUseCanvas(GFXcanvas1 c) {
+void glUseCanvas(GFXcanvas1* c) {
     glCanvas = c;
 }
 
 void glClear(int mask) {
     
     if(mask & GL_COLOR_BUFFER_BIT) {
-        glCanvas.fillScreen(0x0);
+        if(glCanvas != NULL)
+            glCanvas->fillScreen(0x0);
     }
 }
 
@@ -368,14 +369,14 @@ void glBegin(GLDrawMode mode) {
 
 void glEnd(void) {
     
-    if(glDrawMode == GL_NONE)
+    if(glCanvas == NULL || glDrawMode == GL_NONE)
         return;
     
     float modelviewProjection[16];
     multMatrix(modelviewProjection, glMatrices[GL_PROJECTION], glMatrices[GL_MODELVIEW]);
     
-    int frameWidth = glCanvas.width();
-    int frameHeight = glCanvas.height();
+    int frameWidth = glCanvas->width();
+    int frameHeight = glCanvas->height();
     
     for(int i = 0; i < glVerticesCount; i++) {
 
@@ -408,7 +409,7 @@ void glEnd(void) {
             
             for(int x = (px - glPointLength/2.0); x <= (px + glPointLength/2.0); x++)
                 for(int y = (py - glPointLength/2.0); y <= (py + glPointLength/2.0); y++)
-                    glCanvas.drawPixel(x, y, 0x1);
+                    glCanvas->drawPixel(x, y, 0x1);
         }
     }
     
@@ -434,7 +435,7 @@ void glEnd(void) {
         for(int i = 0; i < glVerticesCount; i++) {
             
             int next = (i + 1 == glVerticesCount) ? 0:(i + 1);
-            glCanvas.drawLine(px[i], py[i], px[next], py[next], 0x1);
+            glCanvas->drawLine(px[i], py[i], px[next], py[next], 0x1);
         }
     }
     
@@ -459,9 +460,9 @@ void glEnd(void) {
         
         for(int i = 0; i < glVerticesCount - 2; i++) {
             
-            glCanvas.drawLine(px[i], py[i], px[i + 1], py[i + 1], 0x1);
-            glCanvas.drawLine(px[i], py[i], px[i + 2], py[i + 2], 0x1);
-            glCanvas.drawLine(px[i + 1], py[i + 1], px[i + 2], py[i + 2], 0x1);
+            glCanvas->drawLine(px[i], py[i], px[i + 1], py[i + 1], 0x1);
+            glCanvas->drawLine(px[i], py[i], px[i + 2], py[i + 2], 0x1);
+            glCanvas->drawLine(px[i + 1], py[i + 1], px[i + 2], py[i + 2], 0x1);
             
         }
     }
