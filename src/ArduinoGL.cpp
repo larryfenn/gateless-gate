@@ -25,20 +25,27 @@ unsigned glMatrixStackTop = 0;
 unsigned glPointLength = 1;
 
 /* Aux functions */
-void copyMatrix(float *dest, float *src) {
-    for (int i = 0; i < 16; i++) {
-        dest[i] = src[i];
-    }
-}
+void copyMatrix(float *dest, float *src) { std::copy(src, src + 16, dest); }
 
 void multMatrix(float *dest, float *src1, float *src2) {
-    for (int i = 0; i < 4; i++)
+    float tmp[16];
+    float *tgt = dest;
+    if (dest == src1 || dest == src2) {
+        tgt = tmp;
+    }
+
+    for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            dest[i + j * 4] = 0.0;
+            tgt[i + j * 4] = 0.0;
             for (int k = 0; k < 4; k++) {
-                dest[i + j * 4] += src1[i + k * 4] * src2[k + j * 4];
+                tgt[i + j * 4] += src1[i + k * 4] * src2[k + j * 4];
             }
         }
+    }
+
+    if (tgt == tmp) {
+        copyMatrix(dest, tmp);
+    }
 }
 
 void pushMatrix(float *m) {
@@ -74,9 +81,19 @@ void normVector3(float *dest, float *src) {
 }
 
 void crossVector3(float *dest, float *src1, float *src2) {
-    dest[0] = src1[1] * src2[2] - src1[2] * src2[1];
-    dest[1] = src1[2] * src2[0] - src1[0] * src2[2];
-    dest[2] = src1[0] * src2[1] - src1[1] * src2[0];
+    float tmp[3];
+    float *tgt = dest;
+    if (dest == src1 || dest == src2) {
+        tgt = tmp;
+    }
+
+    tgt[0] = src1[1] * src2[2] - src1[2] * src2[1];
+    tgt[1] = src1[2] * src2[0] - src1[0] * src2[2];
+    tgt[2] = src1[0] * src2[1] - src1[1] * src2[0];
+
+    if (tgt == tmp) {
+        std::copy(tgt, tgt + 3, dest);
+    }
 }
 
 /* Matrices */
@@ -94,11 +111,13 @@ void glLoadMatrixf(float *m) { copyMatrix(glMatrices[glmatrixMode], m); }
 void glLoadIdentity(void) {
     float m[16];
 
-    for (int i = 0; i < 16; i++)
-        if (i % 5 == 0)
+    for (int i = 0; i < 16; i++) {
+        if (i % 5 == 0) {
             m[i] = 1.0;
-        else
+        } else {
             m[i] = 0.0;
+        }
+    }
 
     glLoadMatrixf(m);
 }
@@ -326,7 +345,6 @@ void glEnd(void) {
     int frameHeight = glCanvas->height();
 
     for (unsigned int i = 0; i < glVerticesCount; i++) {
-
         GLVertex aux = multVertex(modelviewProjection, glVertices[i]);
 
         aux.x = aux.x / aux.w;
@@ -339,7 +357,6 @@ void glEnd(void) {
     if (glDrawMode == GL_POINTS) {
 
         for (unsigned int i = 0; i < glVerticesCount; i++) {
-
             GLVertex *aux = &(glVertices[i]);
 
             if (!(glVertices[i].x >= -1.0 && glVertices[i].x <= 1.0))
@@ -379,7 +396,6 @@ void glEnd(void) {
         }
 
         for (unsigned int i = 0; i < glVerticesCount; i++) {
-
             int next = (i + 1u == glVerticesCount) ? 0 : (i + 1);
             glCanvas->drawLine(px[i], py[i], px[next], py[next], 0xc545);
         }
