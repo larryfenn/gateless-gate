@@ -17,7 +17,11 @@ template <class T> class Interpolator {
     void increment() {
         m_value += m_step;
         if (m_error < m_delta) {
-            ++m_value;
+            if (m_delta > 0) {
+                ++m_value;
+            } else {
+                --m_value;
+            }
             m_error += m_steps;
         }
         m_error -= m_delta;
