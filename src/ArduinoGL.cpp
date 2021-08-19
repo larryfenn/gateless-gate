@@ -11,7 +11,7 @@
 
 #define DEG2RAD (3.14159265358979323846 / 180.0)
 
-GFXcanvas16* glCanvas = NULL;
+GFXcanvas16 *glCanvas = NULL;
 GLDrawMode glDrawMode = GL_NONE;
 
 GLVertex glVertices[MAX_VERTICES];
@@ -377,10 +377,10 @@ void glEnd(void) {
             px[i] = (((aux->x + 1.0) / 2.0) * (frameWidth - 1));
             py[i] = ((1.0 - ((aux->y + 1.0) / 2.0)) * (frameHeight - 1));
         }
-        
-        for(int i = 0; i < glVerticesCount; i++) {
-            
-            int next = (i + 1 == glVerticesCount) ? 0:(i + 1);
+
+        for (unsigned int i = 0; i < glVerticesCount; i++) {
+
+            int next = (i + 1u == glVerticesCount) ? 0 : (i + 1);
             glCanvas->drawLine(px[i], py[i], px[next], py[next], 0xc545);
         }
     }
