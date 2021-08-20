@@ -19,7 +19,13 @@ Color565 Color565::with_g(uint8_t g) const { return {r(), g, b()}; }
 Color565 Color565::with_b(uint8_t b) const { return {r(), g(), b}; }
 
 Color565 Color565::dim(float factor) {
-    return Color565(((uint16_t)(r5() * factor) << 11) + ((uint16_t)(g6() * factor) << 5) + (uint16_t)(b5() * factor));
+    uint16_t new_red = (uint16_t)(r5() * factor);
+    new_red = (r() > 0) & (new_red < 1) ? 1 : new_red;
+    uint16_t new_green = (uint16_t)(g6() * factor);
+    new_green = (g() > 0) & (new_green < 1) ? 1 : new_green;
+    uint16_t new_blue = (uint16_t)(b5() * factor);
+    new_blue = (b() > 0) & (new_blue < 1) ? 1 : new_blue;
+    return Color565((new_red << 11) + (new_green << 5) + new_blue);
 }
 
 bool Color565::brighterThan(Color565 color) {
