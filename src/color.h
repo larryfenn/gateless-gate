@@ -23,6 +23,10 @@ class Color565 {
     Color565 with_g(uint8_t g) const;
     Color565 with_b(uint8_t b) const;
 
+    Color565 dim(float factor);
+
+    bool brighterThan(Color565 color);
+
   private:
     uint16_t m_color;
 };

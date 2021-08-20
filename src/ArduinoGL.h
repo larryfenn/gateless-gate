@@ -8,7 +8,8 @@
 #define ArduinoGL_h
 
 #include <Adafruit_GFX.h>
-#include <MyCanvas.h>
+#include "MyCanvas.h"
+#include "color.h"
 
 typedef enum {
     GL_NONE = 0,
@@ -27,7 +28,15 @@ typedef enum {
 
 typedef struct {
     float x, y, z, w;
+    Color565 color;
 } GLVertex;
+
+struct abstract_point {
+  float x;
+  float y;
+  float z;
+  Color565 color;
+};
 
 /* Matrices */
 void glMatrixMode(GLMatrixMode mode);
@@ -51,8 +60,11 @@ void gluLookAt(float eyeX, float eyeY, float eyeZ, float centerX, float centerY,
 /* Vertices */
 void glVertex4fv(float * v);
 void glVertex4f(float x, float y, float z, float w);
+void glVertex4f(float x, float y, float z, float w, Color565 color);
 void glVertex3fv(float * v);
 void glVertex3f(float x, float y, float z);
+void glVertex3f(float x, float y, float z, Color565 color);
+void glVertex3f(abstract_point point);
 
 /* OpenGL */
 void glUseCanvas(MyCanvas* c); /* <-- Arduino only */

@@ -1,5 +1,5 @@
-#include "color.h"
 #include <Adafruit_GFX.h>
+#include "color.h"
 
 #ifndef MyCanvas_h
 #define MyCanvas_h

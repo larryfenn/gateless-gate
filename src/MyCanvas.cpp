@@ -1,7 +1,7 @@
-#include "MyCanvas.h"
 #include <Adafruit_GFX.h>
 #include <algorithm>
 #include <type_traits>
+#include "MyCanvas.h"
 
 #ifdef abs
 #undef abs
@@ -54,9 +54,7 @@ void MyCanvas::drawShadedLine(int16_t x0, int16_t y0, float apparent_d0, int16_t
     if (x0 > x1) {
         std::swap(x0, x1);
         std::swap(y0, y1);
-        if(apparent_d0 > apparent_d1) {
-            std::swap(start_color, end_color);
-        }
+        std::swap(start_color, end_color);
     }
 
     int16_t dx = x1 - x0;
@@ -78,9 +76,13 @@ void MyCanvas::drawShadedLine(int16_t x0, int16_t y0, float apparent_d0, int16_t
     for (; x0 <= x1; x0++) {
         uint16_t color = (r.value() << 11) + (g.value() << 5) + b.value();
         if (steep) {
-            writePixel(y0, x0, color);
+            if(Color565(color).brighterThan(Color565(getRawPixel(y0, x0)))) {            
+               writePixel(y0, x0, color);
+            }
         } else {
-            writePixel(x0, y0, color);
+            if(Color565(color).brighterThan(Color565(getRawPixel(x0, y0)))) {            
+                writePixel(x0, y0, color);
+            }
         }
         err -= dy;
         if (err < 0) {
