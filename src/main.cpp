@@ -32,9 +32,6 @@ void setup(void) {
 }
 
 void drawCube() {
-  Color565 red(255, 0, 0);
-  Color565 green(0, 255, 0);
-  Color565 blue(0, 0, 255);
   /* 
            2
           /|\
@@ -46,14 +43,26 @@ void drawCube() {
        \ | /
          5
   */
+  Color565 red(255, 0, 0);
+  Color565 yellow(255, 255, 0);
+  Color565 green(0, 255, 0);
+  Color565 cyan(0, 255, 255);
+  Color565 blue(0, 0, 255);
+  Color565 magenta(255, 0, 255);
+  Color565 white(255, 255, 255);
+  Color565 peach(0xfd51);
+  Color565 lime(0x97f1);
+  Color565 robinsegg(0x9fff);
+  Color565 lavender(0x9c3f);
+  Color565 azure(0x043f);
  
   abstract_point point1 = { 1, 1, 1, red };
   abstract_point point2 = { -1, 1, 1, blue };
-  abstract_point point3 = { -1, -1, 1, red };
+  abstract_point point3 = { -1, -1, 1, green };
   abstract_point point4 = { 1, -1, 1, blue };
-  abstract_point point5 = { 1, -1, -1, red };
-  abstract_point point6 = { -1, -1, -1, blue };
-  abstract_point point7 = { -1, 1, -1, red };
+  abstract_point point5 = { 1, -1, -1, green };
+  abstract_point point6 = { -1, -1, -1, red };
+  abstract_point point7 = { -1, 1, -1, green };
   abstract_point point8 = { 1, 1, -1, blue };
 
   // Bottom (from the center of the cube looking at the camera)
