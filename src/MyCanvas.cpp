@@ -38,7 +38,11 @@ template <class T> class Interpolator {
 };
 } // namespace
 
-void MyCanvas::drawShadedLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Color565 start_color,
+MyCanvas::MyCanvas(int16_t width, int16_t height) : GFXcanvas16(width, height) {
+  GFXcanvas16(width, height);
+}
+
+void MyCanvas::drawShadedLine(int16_t x0, int16_t y0, float apparent_d0, int16_t x1, int16_t y1, float apparent_d1, Color565 start_color,
                               Color565 end_color) {
     int16_t steep = std::abs(y1 - y0) > std::abs(x1 - x0);
     if (steep) {
@@ -49,7 +53,9 @@ void MyCanvas::drawShadedLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Co
     if (x0 > x1) {
         std::swap(x0, x1);
         std::swap(y0, y1);
-        std::swap(start_color, end_color);
+        if(apparent_d0 > apparent_d1) {
+            std::swap(start_color, end_color);
+        }
     }
 
     int16_t dx = x1 - x0;

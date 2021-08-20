@@ -12,7 +12,7 @@ uint8_t oePin      = 16;
 Adafruit_Protomatter screen(
   64, 6, 1, rgbPins, 5, addrPins, clockPin, latchPin, oePin, true);
 
-GFXcanvas16 c(64, 64);
+MyCanvas c(64, 64);
 void setup(void) {
   Serial.begin(9600);
   ProtomatterStatus status = screen.begin();

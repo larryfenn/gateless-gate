@@ -4,14 +4,16 @@
     fabio914 at gmail.com
  */
 
-#include "ArduinoGL.h"
+#include <ArduinoGL.h>
 #include <Adafruit_GFX.h>
+#include <MyCanvas.h>
+#include <color.h>
 #define MAX_VERTICES 24
 #define MAX_MATRICES 8
 
 #define DEG2RAD (3.14159265358979323846 / 180.0)
 
-GFXcanvas16 *glCanvas = NULL;
+MyCanvas *glCanvas = NULL;
 GLDrawMode glDrawMode = GL_NONE;
 
 GLVertex glVertices[MAX_VERTICES];
@@ -318,7 +320,7 @@ void glVertex3f(float x, float y, float z) { glVertex4f(x, y, z, 1.0); }
 
 /* OpenGL */
 
-void glUseCanvas(GFXcanvas16 *c) { glCanvas = c; }
+void glUseCanvas(MyCanvas *c) { glCanvas = c; }
 
 void glClear(int mask) {
     if (mask & GL_COLOR_BUFFER_BIT && glCanvas != nullptr) {
@@ -340,18 +342,24 @@ void glEnd(void) {
 
     float modelviewProjection[16];
     multMatrix(modelviewProjection, glMatrices[GL_PROJECTION], glMatrices[GL_MODELVIEW]);
-
     int frameWidth = glCanvas->width();
     int frameHeight = glCanvas->height();
-
+    float vertex_distances[glVerticesCount];
     for (unsigned int i = 0; i < glVerticesCount; i++) {
         GLVertex aux = multVertex(modelviewProjection, glVertices[i]);
-
         aux.x = aux.x / aux.w;
         aux.y = aux.y / aux.w;
         aux.z = aux.z / aux.w;
 
         glVertices[i] = aux;
+        // this is shitty and inefficient but i think this is what i need here
+        GLVertex pre_project = multVertex(glMatrices[GL_MODELVIEW], glVertices[i]);
+        float brightest = 2.68968E-05; // apparent z value of max brightness
+        float dimmest = 9.04856E-06; // apparent z value beyond which is darkest
+        float distance = (pre_project.x * pre_project.x) + (pre_project.y * pre_project.y) + (pre_project.z * pre_project.z);
+        Serial.println(distance);
+        float apparent_bri = 1.f / (1.f + distance); // currently .5 to .17 or so
+        vertex_distances[i] = ((max(min(apparent_bri, brightest), dimmest) - dimmest) / (brightest - dimmest)) * 245.f + 8; // 10 is generally the dimmest the LEDs can draw
     }
 
     if (glDrawMode == GL_POINTS) {
@@ -397,7 +405,9 @@ void glEnd(void) {
 
         for (unsigned int i = 0; i < glVerticesCount; i++) {
             int next = (i + 1u == glVerticesCount) ? 0 : (i + 1);
-            glCanvas->drawLine(px[i], py[i], px[next], py[next], 0xc545);
+            // TODO: replace with more sophisticated lighting function
+            // include z coordinate in function signature
+            glCanvas->drawShadedLine(px[i], py[i], vertex_distances[i], px[next], py[next], vertex_distances[next], Color565(vertex_distances[i], 0, 0), Color565(vertex_distances[next], 0, 0));
         }
     }
 

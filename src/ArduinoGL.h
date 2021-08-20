@@ -7,7 +7,8 @@
 #ifndef ArduinoGL_h
 #define ArduinoGL_h
 
-#include "Adafruit_GFX.h"
+#include <Adafruit_GFX.h>
+#include <MyCanvas.h>
 
 typedef enum {
     GL_NONE = 0,
@@ -54,7 +55,7 @@ void glVertex3fv(float * v);
 void glVertex3f(float x, float y, float z);
 
 /* OpenGL */
-void glUseCanvas(GFXcanvas16* c); /* <-- Arduino only */
+void glUseCanvas(MyCanvas* c); /* <-- Arduino only */
 
 void glPointSize(unsigned size);
 void glClear(int mask);
