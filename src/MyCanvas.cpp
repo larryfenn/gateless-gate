@@ -11,12 +11,13 @@ namespace {
 template <class T> class Interpolator {
   public:
     Interpolator(T start, T end, int steps)
-        : m_delta(end - start), m_value(start), m_error(m_delta / 2), m_steps(std::abs(steps)),
-          m_step(m_delta / m_steps) {}
+        : m_delta(end - start), m_value(start), m_steps(std::abs(steps)), m_step(m_delta / m_steps),
+          m_errStep(m_delta - m_step * m_steps), m_error(m_steps / 2) {}
 
     void increment() {
         m_value += m_step;
-        if (m_error < m_delta) {
+        m_error -= m_errStep;
+        if (m_error < 0) {
             if (m_delta > 0) {
                 ++m_value;
             } else {
@@ -24,7 +25,6 @@ template <class T> class Interpolator {
             }
             m_error += m_steps;
         }
-        m_error -= m_delta;
     }
 
     T value() const { return m_value; }
@@ -32,9 +32,10 @@ template <class T> class Interpolator {
   private:
     T m_delta;
     T m_value;
-    T m_error;
     int m_steps;
     T m_step;
+    T m_errStep;
+    T m_error;
 };
 } // namespace
 
