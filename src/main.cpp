@@ -59,7 +59,7 @@ void drawCube() {
   Color565 blue(0, 0, 255);
   Color565 magenta(255, 0, 255);
   Color565 white(255, 255, 255);
-  Color565 peach(0xfd51);
+  Color565 peach(0xfa8a);
   Color565 lime(0x97f1);
   Color565 robinsegg(0x9fff);
   Color565 lavender(0x9c3f);
