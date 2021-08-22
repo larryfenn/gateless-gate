@@ -364,11 +364,12 @@ void glEnd(void) {
         // this is shitty and inefficient but i think this is what i need here
         GLVertex pre_project = multVertex(glMatrices[GL_MODELVIEW], glVertices[i]);
         // bunch of magic numbers come from the actual 3d scene and observer positions
-        float light_start_distance = 39592.f;
+        float light_start_distance = 39590.f;
         float distance = (pre_project.x * pre_project.x) + (pre_project.y * pre_project.y) + (pre_project.z * pre_project.z);
         vertex_distance[i] = distance;
-        float apparent_bri = 1.f / (1.f + (distance - light_start_distance) / 12000.f); // 65800
-        vertex_brightness[i] = max(min(apparent_bri, 1), 0.039215686); // this bottom value is the minimum to keep a LED lit
+        float apparent_bri = 1.f / (1.f + (distance - light_start_distance) / 10000.f); // 65800
+        apparent_bri = apparent_bri < 0 ? 1 : apparent_bri;
+        vertex_brightness[i] = max(min(apparent_bri, 1), 0);
         //Serial.print(distance);
         //Serial.print(", ");
         //Serial.println(apparent_bri);
