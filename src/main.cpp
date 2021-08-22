@@ -12,6 +12,11 @@ uint8_t oePin      = 16;
 Adafruit_Protomatter screen(
   64, 6, 1, rgbPins, 5, addrPins, clockPin, latchPin, oePin, true);
 
+float axis_x;
+float axis_y;
+float axis_z;
+float rot_speed;
+
 MyCanvas c(64, 64);
 void setup(void) {
   Serial.begin(9600);
@@ -110,7 +115,7 @@ void drawCube() {
 }
 
 void loop(void) {
-  float angle = (millis() / 100 % 360) * 1.0f;
+  //float angle = (millis() / 30 % 360) * 1.0f;
   //float in_data = analogRead(A0);
   //Serial.println(in_data);
   //float angle = (in_data * 360.0f) / 1023;
