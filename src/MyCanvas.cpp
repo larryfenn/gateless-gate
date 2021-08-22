@@ -12,7 +12,7 @@ template <class T> class Interpolator {
   public:
     Interpolator(T start, T end, int steps)
         : m_delta(end - start), m_value(start), m_steps(std::abs(steps)), m_step(m_delta / m_steps),
-          m_errStep(m_delta - m_step * m_steps), m_error(m_steps / 2) {}
+          m_errStep(std::abs(m_delta - m_step * m_steps)), m_error(m_steps / 2) {}
 
     void increment() {
         m_value += m_step;
