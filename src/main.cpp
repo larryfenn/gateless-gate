@@ -121,12 +121,23 @@ void loop(void) {
   //float angle = (in_data * 360.0f) / 1023;
   const float scale = 2.5;
 
-
   glClear(GL_COLOR_BUFFER_BIT); 
   
   glLoadIdentity();
   gluLookAt(10, 8, -10, 0, 0, 0, 0, 1, 0);
-  glRotatef(angle, 0.f, 1.f, 0.f);
+  if(millis() % 1000 < 10) {
+    int8_t rand_choice = random(4);
+    rot_speed = random(4) + 1;
+    if(rand_choice == 0) {
+      axis_x = random(100) / 100.f;
+    } else if(rand_choice == 1) {
+      axis_y = random(100) / 100.f;
+    } else {
+      axis_z = random(100) / 100.f;
+    }
+  }
+  float angle = ((int16_t)(millis() / (5 * pow(2, rot_speed))) % 360) * 1.0f;
+  //glRotatef(angle, 0.f, 1.f, 0.f);
   glRotatef(angle, axis_x, axis_y, axis_z);
   glScalef(scale, scale, scale);
   drawCube();
