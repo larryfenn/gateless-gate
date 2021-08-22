@@ -8,7 +8,7 @@
 #include "ArduinoGL.h"
 #include "MyCanvas.h"
 #include "color.h"
-#define MAX_VERTICES 24
+#define MAX_VERTICES 8
 #define MAX_MATRICES 8
 
 #define DEG2RAD (3.14159265358979323846 / 180.0)
