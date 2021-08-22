@@ -1,13 +1,13 @@
 #include <Adafruit_Protomatter.h>
 #include <Adafruit_GFX.h>
 #include "ArduinoGL.h"
+#include <math.h>
 
 uint8_t rgbPins[]  = {7, 8, 9, 10, 11, 12};
 uint8_t addrPins[] = {17, 18, 19, 20, 21};
 uint8_t clockPin   = 14;
 uint8_t latchPin   = 15;
 uint8_t oePin      = 16;
-
 // 6 bit color - 64 brightness levels for each of R, G, B.
 Adafruit_Protomatter screen(
   64, 6, 1, rgbPins, 5, addrPins, clockPin, latchPin, oePin, true);
@@ -34,6 +34,10 @@ void setup(void) {
   //glOrtho(-5, 5, -5, 5, 0.1, 9999.f);
   gluPerspective(30.0, c.width()/c.height(), 0.1f, 999.f);
   glMatrixMode(GL_MODELVIEW);
+  axis_x = 0.f;
+  axis_y = 1.f;
+  axis_z = 0.f;
+  rot_speed = 1;
 }
 
 void drawCube() {

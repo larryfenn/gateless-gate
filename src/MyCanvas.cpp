@@ -95,3 +95,4 @@ void MyCanvas::drawShadedLine(int16_t x0, int16_t y0, float apparent_d0, int16_t
         b.increment();
     }
 }
+
