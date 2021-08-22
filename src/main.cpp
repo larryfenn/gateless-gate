@@ -127,10 +127,70 @@ void loop(void) {
   glLoadIdentity();
   gluLookAt(10, 8, -10, 0, 0, 0, 0, 1, 0);
   glRotatef(angle, 0.f, 1.f, 0.f);
+  glRotatef(angle, axis_x, axis_y, axis_z);
   glScalef(scale, scale, scale);
   drawCube();
-  screen.fillScreen(screen.color565(0, 0, 0));
+  screen.fillScreen(Color565(0, 0, 0));
+  MyCanvas pixelShader(64, 64);
+  MyCanvas tempbuffer(64, 64);
+  bool skip_postprocess = false;
+  uint8_t max_extra_iterations = 0;
+  // background is gonna be whatever crap comes out of the pixel shader
+  if(!skip_postprocess) {
+    for(uint16_t i = 0; i < 64; i++) {
+      for(uint16_t j = 0; j < 64; j++) {
+        Color565 color0 = Color565(c.getPixel(i, j));
+        Color565 color1 = Color565(c.getPixel(min(63, i + 1), j));
+        Color565 color2 = Color565(c.getPixel(i, min(63, j + 1)));
+        Color565 color3 = Color565(c.getPixel(max(0, i - 1), j));
+        Color565 color4 = Color565(c.getPixel(i, max(0, j - 1)));
+        Color565 interp_color = Color565(
+          ((uint16_t)((color0.r5() + color1.r5() + color2.r5() + color3.r5() + color4.r5()) / 5.f) << 11) +
+          ((uint16_t)((color0.g6() + color1.g6() + color2.g6() + color3.g6() + color4.g6()) / 5.f) << 5) +
+          ((uint16_t)((color0.b5() + color1.b5() + color2.b5() + color3.b5() + color4.b5()) / 5.f)));
+        tempbuffer.drawPixel(i, j, interp_color);
+      }
+    }
+    for(uint16_t i = 0; i < 64; i++) {
+      for(uint16_t j = 0; j < 64; j++) {
+        if(c.getPixel(i, j) > 0) {
+          pixelShader.drawPixel(i, j, c.getPixel(i, j));
+        } else {
+          pixelShader.drawPixel(i, j, tempbuffer.getPixel(i, j));
+        }
+      }
+    }
+    for(uint16_t iteration = 0; iteration < max_extra_iterations; iteration++) {
+      for(uint16_t i = 0; i < 64; i++) {
+        for(uint16_t j = 0; j < 64; j++) {
+          Color565 color0 = Color565(pixelShader.getPixel(i, j));
+          Color565 color1 = Color565(pixelShader.getPixel(min(63, i + 1), j));
+          Color565 color2 = Color565(pixelShader.getPixel(i, min(63, j + 1)));
+          Color565 color3 = Color565(pixelShader.getPixel(max(0, i - 1), j));
+          Color565 color4 = Color565(pixelShader.getPixel(i, max(0, j - 1)));
+          Color565 interp_color = Color565(
+            ((uint16_t)((color0.r5() + color1.r5() + color2.r5() + color3.r5() + color4.r5()) / 5.f) << 11) +
+            ((uint16_t)((color0.g6() + color1.g6() + color2.g6() + color3.g6() + color4.g6()) / 5.f) << 5) +
+            ((uint16_t)((color0.b5() + color1.b5() + color2.b5() + color3.b5() + color4.b5()) / 5.f)));
+          tempbuffer.drawPixel(i, j, interp_color);
+        }
+      }
+      for(uint16_t i = 0; i < 64; i++) {
+        for(uint16_t j = 0; j < 64; j++) {
+          if(c.getPixel(i, j) > 0) {
+            pixelShader.drawPixel(i, j, c.getPixel(i, j));
+          } else {
+            pixelShader.drawPixel(i, j, tempbuffer.getPixel(i, j));
+          }
+        }
+      }
+    }
+  }
   // the darkest that can be rendered apparently is screen.color565(8, 8, 8)
-  screen.drawRGBBitmap(0, 0, c.getBuffer(), 64, 64);
+  if(skip_postprocess) {
+    screen.drawRGBBitmap(0, 0, c.getBuffer(), 64, 64);
+  } else {
+    screen.drawRGBBitmap(0, 0, pixelShader.getBuffer(), 64, 64);
+  }
   screen.show();
 }
