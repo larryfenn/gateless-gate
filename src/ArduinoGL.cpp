@@ -354,18 +354,17 @@ void glEnd(void) {
     float vertex_brightness[glVerticesCount];
     for (unsigned int i = 0; i < glVerticesCount; i++) {
         GLVertex aux = multVertex(modelviewProjection, glVertices[i]);
+        float distance = aux.z;
         aux.x = aux.x / aux.w;
         aux.y = aux.y / aux.w;
         aux.z = aux.z / aux.w;
         aux.color = glVertices[i].color;
 
         glVertices[i] = aux;
-        // this is shitty and inefficient but i think this is what i need here
-        const GLVertex pre_project = multVertex(glMatrices[GL_MODELVIEW], glVertices[i]);
         // bunch of magic numbers come from the actual 3d scene and observer positions
-        float light_start_distance = 39590.f;
-        float distance = (pre_project.x * pre_project.x) + (pre_project.y * pre_project.y) + (pre_project.z * pre_project.z);
-        float apparent_bri = 1.f / (1.f + (distance - light_start_distance) / 10000.f);
+        Serial.println(distance);
+        float light_start_distance = 11.72f;
+        float apparent_bri = 1.f / (1.f + (distance - light_start_distance));
         vertex_brightness[i] = max(min(apparent_bri, 1), 0);
     }
 
