@@ -33,7 +33,7 @@ void setup(void) {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   //glOrtho(-5, 5, -5, 5, 0.1, 9999.f);
-  gluPerspective(30.0, 1, 0.1f, 999.f);
+  gluPerspective(30.0, 1, 11.9f, 20.6f);
   glMatrixMode(GL_MODELVIEW);
   axis_x = 0.f;
   axis_y = 1.f;

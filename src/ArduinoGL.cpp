@@ -351,21 +351,14 @@ void glEnd(void) {
     multMatrix(modelviewProjection, glMatrices[GL_PROJECTION], glMatrices[GL_MODELVIEW]);
     int frameWidth = glCanvas->width();
     int frameHeight = glCanvas->height();
-    float vertex_brightness[glVerticesCount];
     for (unsigned int i = 0; i < glVerticesCount; i++) {
         GLVertex aux = multVertex(modelviewProjection, glVertices[i]);
-        float distance = aux.z;
         aux.x = aux.x / aux.w;
         aux.y = aux.y / aux.w;
         aux.z = aux.z / aux.w;
-        aux.color = glVertices[i].color;
-
+        float apparent_bri = 1.f / (1.f + (2 * (1 + aux.z) * (1 + aux.z)));
+        aux.color = glVertices[i].color.dim(apparent_bri);
         glVertices[i] = aux;
-        // bunch of magic numbers come from the actual 3d scene and observer positions
-        Serial.println(distance);
-        float light_start_distance = 11.72f;
-        float apparent_bri = 1.f / (1.f + (distance - light_start_distance));
-        vertex_brightness[i] = max(min(apparent_bri, 1), 0);
     }
 
     if (glDrawMode == GL_POINTS) {
@@ -419,8 +412,7 @@ void glEnd(void) {
             glCanvas->drawShadedLine(
                 px[i], py[i],
                 px[next], py[next],
-                pcolor[i].dim(vertex_brightness[i]), 
-                pcolor[next].dim(vertex_brightness[next]));
+                pcolor[i], pcolor[next]);
         }
     }
 
