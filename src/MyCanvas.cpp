@@ -43,7 +43,7 @@ MyCanvas::MyCanvas(int16_t width, int16_t height) : GFXcanvas16(width, height) {
   GFXcanvas16(width, height);
 }
 
-void MyCanvas::drawShadedLine(int16_t x0, int16_t y0, float apparent_d0, int16_t x1, int16_t y1, float apparent_d1, Color565 start_color,
+void MyCanvas::drawShadedLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, Color565 start_color,
                               Color565 end_color) {
     int16_t steep = std::abs(y1 - y0) > std::abs(x1 - x0);
     if (steep) {
@@ -74,7 +74,7 @@ void MyCanvas::drawShadedLine(int16_t x0, int16_t y0, float apparent_d0, int16_t
     }
 
     for (; x0 <= x1; x0++) {
-        uint16_t color = (r.value() << 11) + (g.value() << 5) + b.value();
+        const uint16_t color = (r.value() << 11) + (g.value() << 5) + b.value();
         if (steep) {
             if(Color565(color).brighterThan(Color565(getRawPixel(y0, x0)))) {            
                writePixel(y0, x0, color);

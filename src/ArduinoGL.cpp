@@ -351,7 +351,6 @@ void glEnd(void) {
     multMatrix(modelviewProjection, glMatrices[GL_PROJECTION], glMatrices[GL_MODELVIEW]);
     int frameWidth = glCanvas->width();
     int frameHeight = glCanvas->height();
-    float vertex_distance[glVerticesCount];
     float vertex_brightness[glVerticesCount];
     for (unsigned int i = 0; i < glVerticesCount; i++) {
         GLVertex aux = multVertex(modelviewProjection, glVertices[i]);
@@ -362,17 +361,12 @@ void glEnd(void) {
 
         glVertices[i] = aux;
         // this is shitty and inefficient but i think this is what i need here
-        GLVertex pre_project = multVertex(glMatrices[GL_MODELVIEW], glVertices[i]);
+        const GLVertex pre_project = multVertex(glMatrices[GL_MODELVIEW], glVertices[i]);
         // bunch of magic numbers come from the actual 3d scene and observer positions
         float light_start_distance = 39590.f;
         float distance = (pre_project.x * pre_project.x) + (pre_project.y * pre_project.y) + (pre_project.z * pre_project.z);
-        vertex_distance[i] = distance;
-        float apparent_bri = 1.f / (1.f + (distance - light_start_distance) / 10000.f); // 65800
-        apparent_bri = apparent_bri < 0 ? 1 : apparent_bri;
+        float apparent_bri = 1.f / (1.f + (distance - light_start_distance) / 10000.f);
         vertex_brightness[i] = max(min(apparent_bri, 1), 0);
-        //Serial.print(distance);
-        //Serial.print(", ");
-        //Serial.println(apparent_bri);
     }
 
     if (glDrawMode == GL_POINTS) {
@@ -411,14 +405,11 @@ void glEnd(void) {
             if (!(glVertices[i].z >= -1.0 && glVertices[i].z <= 1.0))
                 return;
 
-            GLVertex *aux = &(glVertices[i]);
+            const GLVertex *aux = &(glVertices[i]);
 
             px[i] = (((aux->x + 1.0) / 2.0) * (frameWidth - 1));
             py[i] = ((1.0 - ((aux->y + 1.0) / 2.0)) * (frameHeight - 1));
             pcolor[i] = aux->color;
-            Serial.print(pcolor[i]);
-            Serial.print(", ");
-            Serial.println(vertex_brightness[i]);
         }
 
         for (unsigned int i = 0; i < glVerticesCount; i++) {
@@ -427,8 +418,8 @@ void glEnd(void) {
             // include z coordinate in function signature
             // vertices now have a assigned color so we need to read and re-scale that
             glCanvas->drawShadedLine(
-                px[i], py[i], vertex_distance[i], 
-                px[next], py[next], vertex_distance[next], 
+                px[i], py[i],
+                px[next], py[next],
                 pcolor[i].dim(vertex_brightness[i]), 
                 pcolor[next].dim(vertex_brightness[next]));
         }
