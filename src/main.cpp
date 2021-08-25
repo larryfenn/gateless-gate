@@ -2,6 +2,9 @@
 #include <Adafruit_GFX.h>
 #include <math.h>
 #include "ArduinoGL.h"
+#include <cstring>
+#include <array>
+#include <numeric>
 
 uint8_t rgbPins[]  = {7, 8, 9, 10, 11, 12};
 uint8_t addrPins[] = {17, 18, 19, 20, 21};
@@ -12,15 +15,29 @@ uint8_t oePin      = 16;
 Adafruit_Protomatter screen(
   64, 6, 1, rgbPins, 5, addrPins, clockPin, latchPin, oePin, true);
 
-float axis_x;
-float axis_y;
-float axis_z;
-float rot_speed;
+float axis_x = 0.f;
+float axis_y = 1.f;
+float axis_z = 0.f;
+float rot_speed = 0;
 float angle;
+
+int16_t imu_w;
+int16_t imu_x;
+int16_t imu_y;
+int16_t imu_z;
+float mag_x;
+float mag_y;
+float mag_z;
+
+bool idle = true;
 
 MyCanvas c(64, 64);
 void setup(void) {
+  Serial1.write(0x1);
+  pinMode(0, INPUT);
+  pinMode(1, OUTPUT);
   Serial.begin(9600);
+  Serial1.begin(115200);
   ProtomatterStatus status = screen.begin();
   Serial.print("Protomatter begin() status: ");
   Serial.println((int)status);
@@ -29,16 +46,10 @@ void setup(void) {
   }
   glUseCanvas(&c);
   glClear(GL_COLOR_BUFFER_BIT);
-  glPointSize(4);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  //glOrtho(-5, 5, -5, 5, 0.1, 9999.f);
   gluPerspective(30.0, 1, 11.9f, 20.6f);
   glMatrixMode(GL_MODELVIEW);
-  axis_x = 0.f;
-  axis_y = 1.f;
-  axis_z = 0.f;
-  rot_speed = 0;
 }
 
 void drawCube() {
@@ -106,27 +117,61 @@ void drawCube() {
 }
 
 void loop(void) {
-  //float angle = (millis() / 30 % 360) * 1.0f;
-  //float in_data = analogRead(A0);
-  //Serial.println(in_data);
-  //float angle = (in_data * 360.0f) / 1023;
+  int16_t idle_stickiness = 100;
+  // We have to make a tradeoff here -
+  // We can either signal and then block the render loop until the IMU gets back to us
+  // which might cause rendering hiccups but guarantees (?) low latency on the IMU update
+  // Or we can pick up the IMU data whenever its ready, which might mean rendering a frame or two
+  // - giving apparent latency
+  int16_t new_w;
+  int16_t new_x;
+  int16_t new_y;
+  int16_t new_z;
+  if(Serial1.available() >= 20) {
+    char buffer[2];
+    Serial1.readBytes(buffer, 2);
+    std::memcpy(&new_w, &buffer, 2);
+    Serial1.readBytes(buffer, 2);
+    std::memcpy(&new_x, &buffer, 2);
+    Serial1.readBytes(buffer, 2);
+    std::memcpy(&new_y, &buffer, 2);
+    Serial1.readBytes(buffer, 2);
+    std::memcpy(&new_z, &buffer, 2);
+    char float_buffer[4];
+    Serial1.readBytes(float_buffer, 4);
+    std::memcpy(&mag_x, &float_buffer, 4);
+    Serial1.readBytes(float_buffer, 4);
+    std::memcpy(&mag_y, &float_buffer, 4);
+    Serial1.readBytes(float_buffer, 4);
+    std::memcpy(&mag_z, &float_buffer, 4);
+    int16_t deviation = abs(new_w - imu_w) + abs(new_x - imu_x) + abs(new_y - imu_y) + abs(new_z - imu_z);
+    idle = deviation < idle_stickiness;
+    // Empty the rest in case theres garbage data
+    while(Serial1.available() > 0) {
+      Serial1.read();
+    }
+    Serial1.write(0x1);
+  }
   const float scale = 2.5;
 
   glClear(GL_COLOR_BUFFER_BIT); 
   glLoadIdentity();
   gluLookAt(10, 8, -10, 0, 0, 0, 0, 1, 0);
-  angle += pow(2, rot_speed) + 2;
-  if(angle > 360) {
-    angle -= 360;
-    if(random(3) == 0) {
-      rot_speed = random(3);
-      axis_x = random(100) / 100.f;
-      axis_y = random(100) / 100.f;
-      axis_z = random(100) / 100.f;
+  if(idle) {
+    angle += pow(2, rot_speed) + 2;
+    if(angle > 360) {
+      angle -= 360;
+      if(random(3) == 0) {
+        rot_speed = random(3);
+        axis_x = random(100) / 100.f;
+        axis_y = random(100) / 100.f;
+        axis_z = random(100) / 100.f;
+      }
     }
+    glRotatef(angle, axis_x, axis_y, axis_z);
+  } else {
+    glRotateq(imu_w / 16384.0f, imu_x / 16384.0f, imu_y / 16384.0f, imu_z / 16384.0f);
   }
-  //glRotatef(angle, 0.f, 1.f, 0.f);
-  glRotatef(angle, axis_x, axis_y, axis_z);
   glScalef(scale, scale, scale);
   drawCube();
   MyCanvas tempbuffer(64, 64);
