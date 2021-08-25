@@ -53,6 +53,7 @@ void glFrustum(float left, float right, float bottom, float top, float zNear, fl
 void gluPerspective(float fovy, float aspect, float zNear, float zFar);
 
 void glRotatef(float angle, float x, float y, float z);
+void glRotateq(float w, float x, float y, float z);
 void glTranslatef(float x, float y, float z);
 void glScalef(float x, float y, float z);
 void gluLookAt(float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ);
