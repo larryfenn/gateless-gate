@@ -224,17 +224,17 @@ void glRotateq(float w, float x, float y, float z) {
         m[i] = 0.0;
     }
 
-    m[0] = 2 * (w * w + x * x) - 1;
-    m[1] = 2 * (x * y + w * z);
-    m[2] = 2 * (x * z - w * y);
+    m[0] = 1 - 2 * (y * y + z * z);
+    m[1] = 2 * (x * y - w * z);
+    m[2] = 2 * (x * z + w * y);
 
-    m[4] = 2 * (x * y - w * z);
-    m[5] = 2 * (w * w + y * y) - 1;
-    m[6] = 2 * (y * z + w * x);
+    m[4] = 2 * (x * y + w * z);
+    m[5] = 1 - 2 * (x * x + z * z);
+    m[6] = 2 * (y * z - w * x);
 
-    m[8] = 2 * (x * z + w * y);
-    m[9] = 2 * (y * z - w * x);
-    m[10] = 2 * (w * w + z * z) - 1;
+    m[8] = 2 * (x * z - w * y);
+    m[9] = 2 * (y * z + w * x);
+    m[10] = 1 - 2 * (x * x + y * y);
     m[15] = 1;
 
     glMultMatrixf(m);
