@@ -5,6 +5,8 @@
 #include <cstring>
 #include <array>
 #include <numeric>
+#include <Adafruit_LIS3DH.h>
+#include <Adafruit_Sensor.h>
 
 uint8_t rgbPins[]  = {7, 8, 9, 10, 11, 12};
 uint8_t addrPins[] = {17, 18, 19, 20, 21};
@@ -13,31 +15,45 @@ uint8_t latchPin   = 15;
 uint8_t oePin      = 16;
 // 6 bit color - 64 brightness levels for each of R, G, B.
 Adafruit_Protomatter screen(
-  64, 6, 1, rgbPins, 5, addrPins, clockPin, latchPin, oePin, true);
+  64, 5, 1, rgbPins, 5, addrPins, clockPin, latchPin, oePin, true);
 
 float axis_x = 0.f;
 float axis_y = 1.f;
 float axis_z = 0.f;
 float rot_speed = 0;
-float angle;
+float angle = 0;
 
-int16_t imu_w;
-int16_t imu_x;
-int16_t imu_y;
-int16_t imu_z;
-float mag_x;
-float mag_y;
-float mag_z;
+int16_t imu_w = 0;
+int16_t imu_x = 0;
+int16_t imu_y = 0;
+int16_t imu_z = 0;
+float mag_x = 0;
+float mag_y = 0;
+float mag_z = 0;
 
+int16_t old_lis_x;
+int16_t old_lis_y;
+int16_t old_lis_z;
 bool idle = true;
-
+int16_t idle_threshold = 2000; // lowering this makes the device 'wake up' on gentler nudges
+int inactivity_timer_start = 80; // time before the device goes to sleep/idle mode
+int inactivity_timer = 0;
 MyCanvas c(64, 64);
+
+Adafruit_LIS3DH lis = Adafruit_LIS3DH();
+
 void setup(void) {
-  Serial1.write(0x1);
   pinMode(0, INPUT);
   pinMode(1, OUTPUT);
+  lis.begin(0x19);
+  lis.setRange(LIS3DH_RANGE_2_G);
+  lis.read();
+  old_lis_x = lis.x;
+  old_lis_y = lis.y;
+  old_lis_z = lis.z;
   Serial.begin(9600);
-  Serial1.begin(115200);
+  Serial1.begin(9600);
+  Serial1.write(0x1);
   ProtomatterStatus status = screen.begin();
   Serial.print("Protomatter begin() status: ");
   Serial.println((int)status);
@@ -48,7 +64,7 @@ void setup(void) {
   glClear(GL_COLOR_BUFFER_BIT);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  gluPerspective(30.0, 1, 11.9f, 20.6f);
+  gluPerspective(50.0, 1, 5.669f, 18.661f);
   glMatrixMode(GL_MODELVIEW);
 }
 
@@ -117,26 +133,21 @@ void drawCube() {
 }
 
 void loop(void) {
-  int16_t idle_stickiness = 100;
   // We have to make a tradeoff here -
   // We can either signal and then block the render loop until the IMU gets back to us
   // which might cause rendering hiccups but guarantees (?) low latency on the IMU update
   // Or we can pick up the IMU data whenever its ready, which might mean rendering a frame or two
-  // - giving apparent latency
-  int16_t new_w;
-  int16_t new_x;
-  int16_t new_y;
-  int16_t new_z;
+  // - giving apparent latency]
   if(Serial1.available() >= 20) {
     char buffer[2];
     Serial1.readBytes(buffer, 2);
-    std::memcpy(&new_w, &buffer, 2);
+    std::memcpy(&imu_w, &buffer, 2);
     Serial1.readBytes(buffer, 2);
-    std::memcpy(&new_x, &buffer, 2);
+    std::memcpy(&imu_x, &buffer, 2);
     Serial1.readBytes(buffer, 2);
-    std::memcpy(&new_y, &buffer, 2);
+    std::memcpy(&imu_y, &buffer, 2);
     Serial1.readBytes(buffer, 2);
-    std::memcpy(&new_z, &buffer, 2);
+    std::memcpy(&imu_z, &buffer, 2);
     char float_buffer[4];
     Serial1.readBytes(float_buffer, 4);
     std::memcpy(&mag_x, &float_buffer, 4);
@@ -144,19 +155,16 @@ void loop(void) {
     std::memcpy(&mag_y, &float_buffer, 4);
     Serial1.readBytes(float_buffer, 4);
     std::memcpy(&mag_z, &float_buffer, 4);
-    int16_t deviation = abs(new_w - imu_w) + abs(new_x - imu_x) + abs(new_y - imu_y) + abs(new_z - imu_z);
-    idle = deviation < idle_stickiness;
     // Empty the rest in case theres garbage data
     while(Serial1.available() > 0) {
       Serial1.read();
     }
-    Serial1.write(0x1);
   }
   const float scale = 2.5;
 
   glClear(GL_COLOR_BUFFER_BIT); 
   glLoadIdentity();
-  gluLookAt(10, 8, -10, 0, 0, 0, 0, 1, 0);
+  gluLookAt(0, 0, -10, 0, 0, 0, -1, 0, 0);
   if(idle) {
     angle += pow(2, rot_speed) + 2;
     if(angle > 360) {
@@ -171,6 +179,8 @@ void loop(void) {
     glRotatef(angle, axis_x, axis_y, axis_z);
   } else {
     glRotateq(imu_w / 16384.0f, imu_x / 16384.0f, imu_y / 16384.0f, imu_z / 16384.0f);
+    Serial1.write(0x1); // request a new sample be taken next loop
+    inactivity_timer--;
   }
   glScalef(scale, scale, scale);
   drawCube();
@@ -182,6 +192,17 @@ void loop(void) {
       for(uint16_t j = 0; j < 64; j++) {
         const uint16_t present_color = c.getPixel(i, j);
         if(present_color == 0) {
+          /**
+          std::array<Color565, 5> colors {present_color,
+                                          c.getPixel(min(63, i + 1), j),
+                                          c.getPixel(i, min(63, j + 1)),
+                                          c.getPixel(max(0, i - 1), j),
+                                          c.getPixel(i, max(0, j - 1))};
+          uint8_t r = std::accumulate(colors.begin(), colors.end(), 0.0f, [](Color565 c, float acc){ return c.r() + acc; }) / colors.size();
+          uint8_t g = std::accumulate(colors.begin(), colors.end(), 0.0f, [](Color565 c, float acc){ return c.g() + acc; }) / colors.size();
+          uint8_t b = std::accumulate(colors.begin(), colors.end(), 0.0f, [](Color565 c, float acc){ return c.b() + acc; }) / colors.size();
+          Color565 interp_color(r,g,b);
+          **/
           Color565 color0 = Color565(present_color);
           Color565 color1 = Color565(c.getPixel(min(63, i + 1), j));
           Color565 color2 = Color565(c.getPixel(i, min(63, j + 1)));
@@ -207,4 +228,18 @@ void loop(void) {
     screen.drawRGBBitmap(0, 0, tempbuffer.getBuffer(), 64, 64);
   }
   screen.show();
+
+  // Idle check
+  lis.read();
+  int16_t deviation = abs(old_lis_x - lis.x) + abs(old_lis_y - lis.y) + abs(old_lis_z - lis.z);
+  old_lis_x = lis.x;
+  old_lis_y = lis.y;
+  old_lis_z = lis.z;
+  if(inactivity_timer == 0) {
+    idle = true;
+  }
+  if(deviation > idle_threshold) {
+    idle = false;
+    inactivity_timer = inactivity_timer_start;
+  }
 }
