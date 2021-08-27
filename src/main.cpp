@@ -8,6 +8,7 @@
 #include <Adafruit_LIS3DH.h>
 #include <Adafruit_Sensor.h>
 
+#define DEG2RAD (3.14159265358979323846 / 180.0)
 uint8_t rgbPins[]  = {7, 8, 9, 10, 11, 12};
 uint8_t addrPins[] = {17, 18, 19, 20, 21};
 uint8_t clockPin   = 14;
@@ -52,7 +53,7 @@ void setup(void) {
   old_lis_y = lis.y;
   old_lis_z = lis.z;
   Serial.begin(9600);
-  Serial1.begin(9600);
+  Serial1.begin(115200);
   Serial1.write(0x1);
   ProtomatterStatus status = screen.begin();
   Serial.print("Protomatter begin() status: ");
@@ -174,14 +175,24 @@ void loop(void) {
         axis_x = random(100) / 100.f;
         axis_y = random(100) / 100.f;
         axis_z = random(100) / 100.f;
+        // unit vector-ize
+        float magnitude = sqrt(axis_x * axis_x + axis_y * axis_y + axis_z * axis_z);
+        axis_x = axis_x / magnitude;
+        axis_y = axis_y / magnitude;
+        axis_z = axis_z / magnitude;
       }
     }
-    glRotatef(angle, axis_x, axis_y, axis_z);
   } else {
-    glRotateq(imu_w / 16384.0f, imu_x / 16384.0f, imu_y / 16384.0f, imu_z / 16384.0f);
     Serial1.write(0x1); // request a new sample be taken next loop
     inactivity_timer--;
   }
+  float idle_w = cos(DEG2RAD * angle / 2);
+  float idle_x = axis_x * sin(DEG2RAD * angle / 2);
+  float idle_y = axis_y * sin(DEG2RAD * angle / 2);
+  float idle_z = axis_z * sin(DEG2RAD * angle / 2);
+  glRotateq(imu_w / 16384.0f, imu_x / 16384.0f, imu_y / 16384.0f, imu_z / 16384.0f);
+  glRotateq(idle_w, idle_x, idle_y, idle_z);
+
   glScalef(scale, scale, scale);
   drawCube();
   MyCanvas tempbuffer(64, 64);
@@ -192,17 +203,6 @@ void loop(void) {
       for(uint16_t j = 0; j < 64; j++) {
         const uint16_t present_color = c.getPixel(i, j);
         if(present_color == 0) {
-          /**
-          std::array<Color565, 5> colors {present_color,
-                                          c.getPixel(min(63, i + 1), j),
-                                          c.getPixel(i, min(63, j + 1)),
-                                          c.getPixel(max(0, i - 1), j),
-                                          c.getPixel(i, max(0, j - 1))};
-          uint8_t r = std::accumulate(colors.begin(), colors.end(), 0.0f, [](Color565 c, float acc){ return c.r() + acc; }) / colors.size();
-          uint8_t g = std::accumulate(colors.begin(), colors.end(), 0.0f, [](Color565 c, float acc){ return c.g() + acc; }) / colors.size();
-          uint8_t b = std::accumulate(colors.begin(), colors.end(), 0.0f, [](Color565 c, float acc){ return c.b() + acc; }) / colors.size();
-          Color565 interp_color(r,g,b);
-          **/
           Color565 color0 = Color565(present_color);
           Color565 color1 = Color565(c.getPixel(min(63, i + 1), j));
           Color565 color2 = Color565(c.getPixel(i, min(63, j + 1)));
