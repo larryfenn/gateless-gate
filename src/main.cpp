@@ -71,7 +71,7 @@ void setup(void) {
 }
 
 void drawCube() {
-  /* 
+  /*
            2
           /|\
         /  |  1
@@ -94,7 +94,7 @@ void drawCube() {
   Color565 robinsegg(0x9fff);
   Color565 lavender(0x9c3f);
   Color565 azure(0x043f);
- 
+
   abstract_point point1 = { 1, 1, 1, red };
   abstract_point point2 = { -1, 1, 1, blue };
   abstract_point point3 = { -1, -1, 1, green };
@@ -164,7 +164,7 @@ void loop(void) {
   }
   const float scale = 2.5;
 
-  glClear(GL_COLOR_BUFFER_BIT); 
+  glClear(GL_COLOR_BUFFER_BIT);
   glLoadIdentity();
   gluLookAt(0, 0, -10, 0, 0, 0, -1, 0, 0);
   if(idle) {
@@ -205,23 +205,23 @@ void loop(void) {
   bool skip_postprocess = false;
   // background is gonna be whatever crap comes out of the pixel shader
   if(!skip_postprocess) {
-    for(uint16_t i = 0; i < 64; i++) {
-      for(uint16_t j = 0; j < 64; j++) {
-        const uint16_t present_color = c.getPixel(i, j);
+    for(uint16_t i = 1; i < 63; i++) {
+      for(uint16_t j = 1; j < 63; j++) {
+        const uint16_t present_color = c.pixel(i, j);
         if(present_color == 0) {
-          Color565 color1 = Color565(c.getPixel(i + 1, j));
-          Color565 color2 = Color565(c.getPixel(i, j + 1));
-          Color565 color3 = Color565(c.getPixel(i - 1, j));
-          Color565 color4 = Color565(c.getPixel(i, j - 1));
+          Color565 color1 = Color565(c.pixel(i + 1, j));
+          Color565 color2 = Color565(c.pixel(i, j + 1));
+          Color565 color3 = Color565(c.pixel(i - 1, j));
+          Color565 color4 = Color565(c.pixel(i, j - 1));
           Color565 interp_color = Color565(
             (((color1.r5() + color2.r5() + color3.r5() + color4.r5()) / 5) << 11) +
             (((color1.g6() + color2.g6() + color3.g6() + color4.g6()) / 5) << 5) +
             (((color1.b5() + color2.b5() + color3.b5() + color4.b5()) / 5)));
           if(interp_color > 0) {
-            tempbuffer.drawPixel(i, j, interp_color);
+            tempbuffer.pixel(i, j) = interp_color;
           }
         } else {
-          tempbuffer.drawPixel(i, j, present_color);
+          tempbuffer.pixel(i, j) = present_color;
         }
       }
     }
