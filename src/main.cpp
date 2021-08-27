@@ -21,7 +21,7 @@ Adafruit_Protomatter screen(
 float axis_x = 0.f;
 float axis_y = 1.f;
 float axis_z = 0.f;
-float rot_speed = 0;
+int rot_speed = 2;
 float angle = 0;
 
 int16_t imu_w = 0;
@@ -37,8 +37,9 @@ int16_t old_lis_y;
 int16_t old_lis_z;
 bool idle = true;
 int16_t idle_threshold = 2000; // lowering this makes the device 'wake up' on gentler nudges
-int inactivity_timer_start = 80; // time before the device goes to sleep/idle mode
+int inactivity_timer_start = 60; // time before the device goes to sleep/idle mode
 int inactivity_timer = 0;
+int idle_acceleration_timer = 0;
 MyCanvas c(64, 64);
 
 Adafruit_LIS3DH lis = Adafruit_LIS3DH();
@@ -167,11 +168,15 @@ void loop(void) {
   glLoadIdentity();
   gluLookAt(0, 0, -10, 0, 0, 0, -1, 0, 0);
   if(idle) {
-    angle += pow(2, rot_speed) + 2;
+    float speed_penalty = 1;
+    if(idle_acceleration_timer++ < 60) {
+      speed_penalty = idle_acceleration_timer / 60.f;
+    }
+    angle += rot_speed * speed_penalty;
     if(angle > 360) {
       angle -= 360;
       if(random(3) == 0) {
-        rot_speed = random(3);
+        //rot_speed = 2 * random(3) + 2;
         axis_x = random(100) / 100.f;
         axis_y = random(100) / 100.f;
         axis_z = random(100) / 100.f;
@@ -186,10 +191,11 @@ void loop(void) {
     Serial1.write(0x1); // request a new sample be taken next loop
     inactivity_timer--;
   }
-  float idle_w = cos(DEG2RAD * angle / 2);
-  float idle_x = axis_x * sin(DEG2RAD * angle / 2);
-  float idle_y = axis_y * sin(DEG2RAD * angle / 2);
-  float idle_z = axis_z * sin(DEG2RAD * angle / 2);
+  float idle_w = cos(.5 * DEG2RAD * angle);
+  float sine_component = sin(.5 * DEG2RAD * angle);
+  float idle_x = axis_x * sine_component;
+  float idle_y = axis_y * sine_component;
+  float idle_z = axis_z * sine_component;
   glRotateq(imu_w / 16384.0f, imu_x / 16384.0f, imu_y / 16384.0f, imu_z / 16384.0f);
   glRotateq(idle_w, idle_x, idle_y, idle_z);
 
@@ -203,15 +209,14 @@ void loop(void) {
       for(uint16_t j = 0; j < 64; j++) {
         const uint16_t present_color = c.getPixel(i, j);
         if(present_color == 0) {
-          Color565 color0 = Color565(present_color);
-          Color565 color1 = Color565(c.getPixel(min(63, i + 1), j));
-          Color565 color2 = Color565(c.getPixel(i, min(63, j + 1)));
-          Color565 color3 = Color565(c.getPixel(max(0, i - 1), j));
-          Color565 color4 = Color565(c.getPixel(i, max(0, j - 1)));
+          Color565 color1 = Color565(c.getPixel(i + 1, j));
+          Color565 color2 = Color565(c.getPixel(i, j + 1));
+          Color565 color3 = Color565(c.getPixel(i - 1, j));
+          Color565 color4 = Color565(c.getPixel(i, j - 1));
           Color565 interp_color = Color565(
-            ((uint16_t)((color0.r5() + color1.r5() + color2.r5() + color3.r5() + color4.r5()) / 5.f) << 11) +
-            ((uint16_t)((color0.g6() + color1.g6() + color2.g6() + color3.g6() + color4.g6()) / 5.f) << 5) +
-            ((uint16_t)((color0.b5() + color1.b5() + color2.b5() + color3.b5() + color4.b5()) / 5.f)));
+            (((color1.r5() + color2.r5() + color3.r5() + color4.r5()) / 5) << 11) +
+            (((color1.g6() + color2.g6() + color3.g6() + color4.g6()) / 5) << 5) +
+            (((color1.b5() + color2.b5() + color3.b5() + color4.b5()) / 5)));
           if(interp_color > 0) {
             tempbuffer.drawPixel(i, j, interp_color);
           }
@@ -241,5 +246,6 @@ void loop(void) {
   if(deviation > idle_threshold) {
     idle = false;
     inactivity_timer = inactivity_timer_start;
+    idle_acceleration_timer = 0;
   }
 }
