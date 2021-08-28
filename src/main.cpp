@@ -1,12 +1,8 @@
 #include <Adafruit_Protomatter.h>
 #include <Adafruit_GFX.h>
-#include <math.h>
-#include "ArduinoGL.h"
-#include <cstring>
-#include <array>
-#include <numeric>
 #include <Adafruit_LIS3DH.h>
-#include <Adafruit_Sensor.h>
+#include <cstring>
+#include "ArduinoGL.h"
 
 #define DEG2RAD (3.14159265358979323846 / 180.0)
 uint8_t rgbPins[]  = {7, 8, 9, 10, 11, 12};
@@ -14,16 +10,13 @@ uint8_t addrPins[] = {17, 18, 19, 20, 21};
 uint8_t clockPin   = 14;
 uint8_t latchPin   = 15;
 uint8_t oePin      = 16;
-// 6 bit color - 64 brightness levels for each of R, G, B.
+
 Adafruit_Protomatter screen(
   64, 5, 1, rgbPins, 5, addrPins, clockPin, latchPin, oePin, true);
+MyCanvas c(64, 64);
 
-float axis_x = 0.f;
-float axis_y = 1.f;
-float axis_z = 0.f;
-int rot_speed = 2;
-float angle = 0;
-
+// IMU readings
+// These are global in case a hiccup occurs and we don't get serial data for one loop
 int16_t imu_w = 0;
 int16_t imu_x = 0;
 int16_t imu_y = 0;
@@ -32,6 +25,13 @@ float mag_x = 0;
 float mag_y = 0;
 float mag_z = 0;
 
+// Idle animation
+float axis_x = 0.f;
+float axis_y = 1.f;
+float axis_z = 0.f;
+int rot_speed = 2;
+float angle = 0;
+Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 int16_t old_lis_x;
 int16_t old_lis_y;
 int16_t old_lis_z;
@@ -40,9 +40,6 @@ int16_t idle_threshold = 2000; // lowering this makes the device 'wake up' on ge
 int inactivity_timer_start = 60; // time before the device goes to sleep/idle mode
 int inactivity_timer = 0;
 int idle_acceleration_timer = 0;
-MyCanvas c(64, 64);
-
-Adafruit_LIS3DH lis = Adafruit_LIS3DH();
 
 void setup(void) {
   pinMode(0, INPUT);
@@ -176,11 +173,9 @@ void loop(void) {
     if(angle > 360) {
       angle -= 360;
       if(random(3) == 0) {
-        //rot_speed = 2 * random(3) + 2;
         axis_x = random(100) / 100.f;
         axis_y = random(100) / 100.f;
         axis_z = random(100) / 100.f;
-        // unit vector-ize
         float magnitude = sqrt(axis_x * axis_x + axis_y * axis_y + axis_z * axis_z);
         axis_x = axis_x / magnitude;
         axis_y = axis_y / magnitude;
@@ -198,12 +193,10 @@ void loop(void) {
   float idle_z = axis_z * sine_component;
   glRotateq(imu_w / 16384.0f, imu_x / 16384.0f, imu_y / 16384.0f, imu_z / 16384.0f);
   glRotateq(idle_w, idle_x, idle_y, idle_z);
-
   glScalef(scale, scale, scale);
   drawCube();
   MyCanvas tempbuffer(64, 64);
   bool skip_postprocess = false;
-  // background is gonna be whatever crap comes out of the pixel shader
   if(!skip_postprocess) {
     for(uint16_t i = 1; i < 63; i++) {
       for(uint16_t j = 1; j < 63; j++) {
@@ -226,7 +219,6 @@ void loop(void) {
       }
     }
   }
-  // the darkest that can be rendered apparently is screen.color565(8, 8, 8)
   if(skip_postprocess) {
     screen.drawRGBBitmap(0, 0, c.getBuffer(), 64, 64);
   } else {
